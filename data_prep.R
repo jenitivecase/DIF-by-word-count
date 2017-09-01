@@ -3,5 +3,5 @@ responses <- read.table("CP2016_responses.txt",
                             strip.white = TRUE, fill = TRUE,
                             blank.lines.skip = TRUE)
 
-saveRDS(responses, "CP2016_responses.txt.rds")
+saveRDS(responses, "CP2016_responses.rds")
 gc()
