@@ -21,7 +21,9 @@ responses <- responses %>%
   group_by(BookletID, qbtbQuestionID) %>% 
   filter(length(unique(IsCorrect)) == 1) %>% 
   ungroup() %>%
-  arrange(qbtbQuestionID)
+  arrange(qbtbQuestionID) %>%
+  mutate(BookletID = as.numeric(factor(BookletID))) %>%
+  mutate(qbtbQuestionID = as.numeric(factor(qbtbQuestionID)))
 
 nwords <- function(string, pseudo=F){
   ifelse( pseudo, 
@@ -32,10 +34,17 @@ nwords <- function(string, pseudo=F){
 }
 
 item_content <- item_content %>%
-  group_by(QuestionID) %>%
-  mutate(WC = nwords(unique(stem), pseudo = T)) %>%
-  ungroup() %>%
+  select(QuestionID, stem) %>%
+  unique() %>%
+  mutate(WC = nwords(stem, pseudo = T)) %>%
   arrange(QuestionID)
+
+item_WC <- as.data.frame(unique(responses$qbtbQuestionID)) 
+colnames(item_WC) <- "QuestionID"
+item_WC <- left_join(item_WC, item_content, by = c("QuestionID" = "QuestionID")) %>%
+  arrange(QuestionID) %>%
+  mutate(QuestionID = as.numeric(factor(QuestionID)))
+
 
 ################################################################################
 #### ANALYSIS ##################################################################
@@ -49,11 +58,10 @@ n_items <- length(unique(responses$qbtbQuestionID))
 n_observations <- nrow(responses)
 respondentid <- responses$BookletID
 itemid <- responses$qbtbQuestionID
-response <- responsese$IsCorrect
+response <- responses$IsCorrect
 group_long <- responses$LanguageID
-group <- unique(responses[, c("BookletID", "LanguageID")])
-DIFpredict <- item_content$WC
-
+group <- unique(responses[, c("BookletID", "LanguageID")])$LanguageID
+DIFpredict <- item_WC$WC
 
 
 dat_long <- list("n_people", "n_items", "n_observations", "respondentid", 
@@ -63,6 +71,8 @@ dat_long <- list("n_people", "n_items", "n_observations", "respondentid",
 analysis <- sampling(precomp_model, data = dat_long,
                      iter = 12000, warmup = 5000, chains = 2, 
                      verbose = TRUE, cores = 2)
+
+saveRDS(analysis, paste0("DIF-by-WC-stanfit_", date, ".rds"))
 
 params_summary <- summary(analysis, pars = c("a", "b", "D", "beta0", "beta1", "mu", 
                                              "sigma2", "R2", "theta",
