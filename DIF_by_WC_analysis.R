@@ -21,9 +21,10 @@ responses <- responses %>%
   group_by(BookletID, qbtbQuestionID) %>% 
   filter(length(unique(IsCorrect)) == 1) %>% 
   ungroup() %>%
-  arrange(qbtbQuestionID) %>%
-  mutate(BookletID = as.numeric(factor(BookletID))) %>%
-  mutate(qbtbQuestionID = as.numeric(factor(qbtbQuestionID)))
+  arrange(qbtbQuestionID)
+
+
+gc()
 
 nwords <- function(string, pseudo=F){
   ifelse( pseudo, 
@@ -39,12 +40,15 @@ item_content <- item_content %>%
   mutate(WC = nwords(stem, pseudo = T)) %>%
   arrange(QuestionID)
 
-item_WC <- as.data.frame(unique(responses$qbtbQuestionID)) 
+item_WC <- as.data.frame(unique(as.numeric(as.character(responses$qbtbQuestionID))))
 colnames(item_WC) <- "QuestionID"
 item_WC <- left_join(item_WC, item_content, by = c("QuestionID" = "QuestionID")) %>%
   arrange(QuestionID) %>%
   mutate(QuestionID = as.numeric(factor(QuestionID)))
 
+responses <- responses %>% 
+  mutate(BookletID = as.numeric(factor(BookletID))) %>%
+  mutate(qbtbQuestionID = as.numeric(factor(qbtbQuestionID)))
 
 ################################################################################
 #### ANALYSIS ##################################################################
