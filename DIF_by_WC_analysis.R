@@ -10,6 +10,9 @@ item_content <- read.xlsx("K:/AscendKC/Corp/R_and_D/1-USERS/Jennifer Brussow/Out
 
 responses <- readRDS("CP2016_responses_20170905.rds")
 
+#filter down to one form. comment out when doing multiple forms
+responses <- filter(responses, AssessmentID == 143248)
+
 responses <- responses %>% 
   select(BookletID, qbtbQuestionID, IsCorrect, LanguageID) %>%
   mutate(LanguageID = case_when(LanguageID == 0 ~ 0,
@@ -22,7 +25,6 @@ responses <- responses %>%
   filter(length(unique(IsCorrect)) == 1) %>% 
   ungroup() %>%
   arrange(qbtbQuestionID)
-
 
 gc()
 
