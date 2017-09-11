@@ -63,9 +63,11 @@ responses <- spread(responses, key = qbtbQuestionID, value = IsCorrect)
 
 model <- paste0("F1 = 1-", nrow(item_content))
 group <- as.data.frame(responses$LanguageID)
+names(group) <- "group"
 
+#stage 1
 out <- mixedmirt(data = as.data.frame(responses[, -c(1:2)]), covdata = group, itemdesign = item_WC, 
           model = model, itemtype = "2PL",
-          fixed = ~ 0 + group + items
+          fixed = ~ 0 + group + items,
           formula = list(F1 = ~ group + WC),
           verbose = TRUE)
