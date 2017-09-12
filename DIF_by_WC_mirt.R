@@ -90,8 +90,28 @@ out_coef <- coef(out, IRTpars = TRUE, as.data.frame = TRUE)
 out_coef
 
 #stage 1 - multiple groups analysis
+responses %>%
+  group_by(LanguageID) %>%
+  summarize(mean(`1`, na.rm = TRUE))
+
 out_MG <- multipleGroup(data = as.data.frame(responses[, -c(1:2)]), group = group, 
-                        model = model, invariance = c("free_means", "slopes"), itemtype = "2PL")
+                        model = model, invariance = c("free_means", "slopes", c("2", "3", "6", "14", "26")),
+                        itemtype = "2PL")
   
+out_coef <- coef(out_MG, IRTpars = TRUE, simplify = TRUE)
+
 out_MG_DIF <- DIF(out_MG, which.par = "d", plotdif = TRUE, verbose = TRUE, 
                   technical = list(NCYCLES = 1000))
+
+sig_ind <- t(sapply(out_MG_DIF, FUN = function(x) print(x$p)))
+sig_ind <- data.frame(seq(1:nrow(sig_ind)), sig_ind[,2])
+names(sig_ind) <- c("Item", "pvalue")
+
+dif_ind <- sig_ind[which(sig_ind$`pvalue` <= .05), "Item"]
+DIF_results <- out_MG_DIF[dif_ind]
+
+for(i in dif_ind){
+  print(itemplot(out_MG, item = paste0(i), theta_lim = c(-3, 3)))
+  Sys.sleep(1)
+}
+
