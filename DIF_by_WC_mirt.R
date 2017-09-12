@@ -11,7 +11,9 @@ item_content <- read.xlsx("K:/AscendKC/Corp/R_and_D/1-USERS/Jennifer Brussow/Out
 responses <- readRDS("CP2016_responses_20170905.rds")
 
 #filter down to one form. comment out when doing multiple forms
-responses <- filter(responses, AssessmentID == 143248)
+#pick assessment id 143248, 143436, or 143657
+formid <- 143436
+responses <- filter(responses, AssessmentID == formid)
 
 #pare down to needed variables, eliminate missing responses, and recode language
 responses <- responses %>% 
@@ -78,17 +80,6 @@ group <- as.character(group)
 
 mirtCluster(2)
 
-#stage 1 - attempt with mixedmirt()
-out <- mixedmirt(data = as.data.frame(responses[, -c(1:2)]), covdata = group, itemdesign = item_WC, 
-          model = model, itemtype = "2PL",
-          fixed = ~ 0 + group + items,
-          verbose = TRUE)
-
-summary(out)
-randef(out)
-out_coef <- coef(out, IRTpars = TRUE, as.data.frame = TRUE)
-out_coef
-
 #stage 1 - multiple groups analysis
 responses %>%
   group_by(LanguageID) %>%
@@ -119,3 +110,8 @@ for(i in dif_ind){
 dif_amt <- out_coef$`0`$items[, "b"] - out_coef$`1`$items[, "b"]
 dif_explain <- lm(dif_amt ~ item_WC$WC)
 summary(dif_explain)
+
+out <- list(responses, group, item_WC, out_MG, out_MG_DIF)
+names(out) <- c("responses", "group", "item_WC", "out_MG", "out_MG_DIF")
+
+saveRDS(out, paste0("mirt-DIF-by-WC-analysis_form-", formid, "_", date, ".rds"))
