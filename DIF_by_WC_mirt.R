@@ -115,3 +115,7 @@ for(i in dif_ind){
   Sys.sleep(1)
 }
 
+#Stage 2 - so simple! Wow!
+dif_amt <- out_coef$`0`$items[, "b"] - out_coef$`1`$items[, "b"]
+dif_explain <- lm(dif_amt ~ item_WC$WC)
+summary(dif_explain)
