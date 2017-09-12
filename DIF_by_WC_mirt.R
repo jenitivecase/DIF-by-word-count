@@ -62,12 +62,25 @@ responses <- spread(responses, key = qbtbQuestionID, value = IsCorrect)
 ################################################################################
 
 model <- paste0("F1 = 1-", nrow(item_content))
-group <- as.data.frame(responses$LanguageID)
+group <- as.matrix(responses$LanguageID)
 names(group) <- "group"
+group <- as.character(group)
 
 #stage 1
 out <- mixedmirt(data = as.data.frame(responses[, -c(1:2)]), covdata = group, itemdesign = item_WC, 
           model = model, itemtype = "2PL",
           fixed = ~ 0 + group + items,
-          formula = list(F1 = ~ group + WC),
           verbose = TRUE)
+
+summary(out)
+randef(out)
+out_coef <- coef(out, IRTpars = TRUE, as.data.frame = TRUE)
+out_coef
+
+mirtCluster(2)
+
+out_MG <- multipleGroup(data = as.data.frame(responses[, -c(1:2)]), group = group, 
+                        model = model, invariance = c("free_means", "slopes"), itemtype = "2PL")
+  
+out_MG_DIF <- DIF(out_MG, which.par = "d", plotdif = TRUE, verbose = TRUE, 
+                  technical = list(NCYCLES = 1000))
