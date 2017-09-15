@@ -3,12 +3,46 @@
 ################################################################################
 source("K:/AscendKC/Corp/R_and_D/1-USERS/Jennifer Brussow/options.R")
 
-needed_packages <- c("mirt", "stringr")
+needed_packages <- c("mirt", "stringr", "RODBC")
 sapply(needed_packages, load_packages)
 
-item_content <- read.xlsx("K:/AscendKC/Corp/R_and_D/1-USERS/Jennifer Brussow/Outcome Modeling/Outcome_analysis/Reporting/item_content_from_QBTB-db.xlsx")
 
-responses <- readRDS("CP2016_responses_20170905.rds")
+db <- odbcDriverConnect('driver={SQL Server};server=asc-prd-sql07;trusted_connection=true')
+
+responses <- sqlQuery(db, "
+SELECT book.BookletID, book.QuestionID, book.IsCorrect, book.atiDate, 
+batch.AssessmentID, batch.ProgramTypeID,
+asmt.AssessmentID, asmt.AssessmentStyleID, asmt.TestTypeID, 
+qbtbmap.QuestionID as qbtbQuestionID,
+users.RaceID,
+users.LanguageID
+	FROM asm.BookletAnswer.Bookletanswer (nolock) as book
+	LEFT JOIN asm.Config.Batch (nolock) as batch on batch.batchID = book.BatchID
+	LEFT JOIN asm.Config.Assessment (nolock) as asmt on asmt.AssessmentID = batch.AssessmentID
+	LEFT JOIN contentBuilder.QBTB.TestSectionQuestionASMMappedValue (nolock) as qbtbmap on qbtbmap.ASMMappedValue = book.QuestionID
+	LEFT JOIN contentBuilder.QBTB.Question (nolock) as qbtbq on qbtbq.QuestionID = qbtbmap.QuestionID
+	LEFT JOIN asm.Stats.Booklet (nolock) as bookinfo on bookinfo.BookletID = book.BookletID
+	LEFT JOIN asm.Config.atiUser (nolock) as users on users.UserID = bookinfo.UserID
+	WHERE book.IsDemo = 0 AND
+	((book.atiDate >= '20161115' AND book.atiDate <= '20161231') OR
+	(book.atiDate >= '20170401' AND book.atiDate <= '20170515')) AND
+	batch.ProgramTypeID = 2 AND
+	asmt.AssessmentStyleID = 2 AND
+	asmt.TestTypeID = 3 AND
+	asmt.AssessmentID IN (143248, 143436, 143657) AND
+	qbtbq.IsValidated = 1
+")
+
+item_content <- sqlQuery(db, sprintf("
+SELECT q.QuestionID, q.Value as stem, q.UpdateDate, choice.ChoiceID, choice.IsCorrect, cattr.Value as responseopt
+  FROM [contentBuilder].[QBTB].[QuestionAttributeValue] as q
+                         LEFT JOIN [contentBuilder].[QBTB].[Choice] as choice on choice.QuestionID = q.QuestionID
+                         LEFT JOIN [contentBuilder].[QBTB].[ChoiceAttributeValue] as cattr on cattr.ChoiceID = choice.ChoiceID
+                         WHERE q.AttributeEntityMappingID = 1056 AND
+                         cattr.AttributeEntityMappingID = 1034 AND
+                         q.QuestionID IN(%s)
+ORDER BY QuestionID, IsCorrect
+                         ", paste0(unique(responses$qbtbQuestionID), collapse = ",")))
 
 #filter down to one form. comment out when doing multiple forms
 #pick assessment id 143248, 143436, or 143657
