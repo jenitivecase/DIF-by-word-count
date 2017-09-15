@@ -74,12 +74,23 @@ nwords <- function(string, pseudo=F){
   str_count(string, pattern)
 }
 
+word_length <- function(string, pseudo = F){
+  ifelse( pseudo,
+          pattern <- "\\S+",
+          pattern <- "[[:alpha:]]+" 
+  )
+  n_words <- str_count(string, pattern)
+  all_lets <- str_count(string, "[[:alpha:]]")
+  return(all_lets/n_words)
+}
+
 #get item ids, count number of words in stem
 item_content <- item_content %>%
   filter(QuestionID %in% responses$qbtbQuestionID) %>%
   select(QuestionID, stem) %>%
   unique() %>%
   mutate(WC = nwords(stem, pseudo = T)) %>%
+  mutate(WL = word_length(stem, pseudo = T)) %>%
   arrange(QuestionID)
 
 #creating a factorized version (i.e., sequentially numbered, starting from 1) 
