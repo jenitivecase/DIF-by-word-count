@@ -76,7 +76,7 @@ dat_long <- list("n_people", "n_items", "n_observations", "respondentid",
 
 analysis <- sampling(precomp_model, data = dat_long,
                      iter = 12000, warmup = 5000, chains = 2, 
-                     verbose = TRUE, cores = 2)
+                     verbose = TRUE, cores = 2, refresh = "max(iter/2,1)")
 
 saveRDS(analysis, paste0("DIF-by-WC-stanfit_", date, ".rds"))
 
